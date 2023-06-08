@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 def mainAlg(sig, f0):
     """
     完整CBF算法的封装，用于软件内部调用，使用前提是已知相关参数。
+
     封装时需要更改:
     (1) 滑动窗函数 (slideWinView) 的输入变量 win，overlap 的默认值；
     (2) 常规波束形成算法 (CBF) 函数的输入变量 freq0, delta 的默认值。
@@ -74,6 +75,7 @@ def CBFPreProcess(sig):
 
 def slideWinView(sig, win=10, overlap=0):
     """
+    滑动窗函数
 
     :param sig: 阵列信号，阵元 × 采集信号（行 × 列）
     :param win: 表示滑动窗长度的快拍数。Len = 采样频率 × 窗口时间长度。
@@ -87,10 +89,11 @@ def slideWinView(sig, win=10, overlap=0):
 
 def CBF(aSignal, freq0, delta=1.5):
     """
-    常规波束形成
+    常规波束形成算法
+
     阵元编号(N个阵元)：
-        o----o----o-...-o----o
-        0    1    2 ... N-2  N-1
+        o- - - -o- - - -o- ... -o- - - -o  \n
+        0- - - -1- - - -2- ... -N-2- - - -N-1  \n
 
     :param aSignal: 阵列信号，阵元 × 采集信号，需要再函数调用前对采集的信号做 Hilbert 变换
     :param freq0: 发射信号频率

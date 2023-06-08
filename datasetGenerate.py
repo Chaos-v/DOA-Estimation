@@ -6,10 +6,11 @@
     @Date: 2023/5/24
     @Description: 用于生成决策算法所需要的数据集，包括相关的函数
 """
-from ConvBeamForming import CBF
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.signal import hilbert
+import pickle
+import os
+import time
 
 
 def signalGenerate(theta0, sampleTime=10, eleNum=10, eleSpacing=1.5,
@@ -60,8 +61,7 @@ def signalGenerate(theta0, sampleTime=10, eleNum=10, eleSpacing=1.5,
     return arraySignal, tScale
 
 
-def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10,
-                  sampFreq=51200, freq0=50, sigAmp=1, SNR=0):
+def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10, sampleFreq=51200, freq0=50, sigAmp=1, SNR=0):
     """
     生成无占空比的，连续的水平阵列采样信号
 
@@ -69,7 +69,7 @@ def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10,
     :param sampleTime: 阵列采集时间，也就是每一个换能器的时间长度，单位：s
     :param eleNum: 阵元数量
     :param eleSpacing: 阵元间距，单位：m
-    :param sampFreq: 采样频率
+    :param sampleFreq: 采样频率
     :param freq0: 发射信号频率，单位：Hz
     :param sigAmp: 发射信号幅度
     :param SNR: 信噪比
@@ -81,8 +81,8 @@ def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10,
     phi0 = 2 * np.pi * freq0 * tou0
 
     # 生成发射信号计算添加噪声的均值方差
-    N = int(sampFreq * sampleTime)
-    tScale = np.arange(0, sampleTime, 1 / sampFreq)
+    N = int(sampleFreq * sampleTime)
+    tScale = np.arange(0, sampleTime, 1 / sampleFreq)
     # 根据输入的信噪比计算需要添加的噪声均值(mean)和方差(var)
     transmitSignal = sigAmp * np.sin(2 * np.pi * freq0 * tScale)  # 标准发射信号部分
     meanNoise, varNoise = 0, (np.sqrt(np.sum(transmitSignal ** 2) / len(transmitSignal)) / (10 ** (SNR / 10)))
@@ -91,57 +91,57 @@ def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10,
     for index in range(eleNum):
         noise = np.random.normal(meanNoise, varNoise, N)
         tmpSig = sigAmp * np.sin(2 * np.pi * freq0 * tScale - index * phi0)  # 发射信号部分
-        # arraySignal[index, :] = hilbert(tmpSig + noise)
-        arraySignal[index, :] = tmpSig + noise
+        arraySignal[index, :] = hilbert(tmpSig + noise)  # hilbert变换
+        # arraySignal[index, :] = tmpSig + noise
 
     return arraySignal, tScale
 
 
 if __name__ == '__main__':
     print("================== datasetGenerate ==================")
-    # 接收阵部分
-    theta0 = 10  # 入射角度
-
-    recevTime = 2  # 信号接收时间
+    print("Start Time: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    # 论文需求需要改变的参数
+    thetaList = list(range(-90, 91, 1))
+    snrList = [20, 10, 0, -10]
     M = 10  # 阵元数量
+
+    # 固定不变参数
+    recvTime = 2  # 信号接收时间
     d = 1.5  # 阵元间距
     fs = 51200  # 水平阵采样频率
-    # c = 1500  # 声速
+    N = recvTime * fs  # 采样点数
 
-    # 发射部分
-    f0 = 300  # 发射信号频率
-    T = 0.2  # 信号周期
-    interval = 1
-    amp = 1  # 信号幅度
-    snr = 5
+    f0_list = [500]  # 取500是满足阵元间距等于半波长的条件
+    f0 = f0_list[np.random.randint(0, len(f0_list))]  # 发射信号频率
 
-    # ==================== 产生仿真信号 ====================
-    cwSignal, tScale = sigCW(theta0, sampleTime=recevTime, eleNum=M, eleSpacing=d,
-                             sampFreq=fs, freq0=f0, sigAmp=amp, SNR=snr)
+    # 创建文件存放目录
+    datasetFolder = 'dataset'
+    if not os.path.exists(datasetFolder):
+        os.mkdir(os.path.join(datasetFolder))
 
-    # # ==================== 滑动窗截取 ====================
-    # winLen = interval + T / 2  # 滑动时间窗长度
-    # overlapLen = int(0.1 * fs)
-    # shape = (np.size(cwSignal, 0), int(fs * winLen))
-    # v = np.lib.stride_tricks.sliding_window_view(cwSignal, shape)[:, ::overlapLen, :].squeeze()
-    #
-    # # 每一个窗做一个 CBF
-    # for i in range(len(v)):
-    #     if i == 0:
-    #         theta_Deg, P_dB = CBF(v[i], freq0=f0, delta=d)
-    #     else:
-    #         theta_Deg, tmpP = CBF(v[i], freq0=f0, delta=d)
-    #         P_dB = np.vstack([P_dB, tmpP])
+    print("Dataset Generating... Do not close the VSCode.")
 
-    theta_Deg, P_dB = CBF(cwSignal, f0, d)
+    for snr in snrList:
+        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "\tSNR = " + str(snr))
+        # 不同信噪比下创建数据集
+        datasetList = []
+        for theta0 in thetaList:
+            # 不同入射角
+            for i in range(1000):
+                # 每次循环生成一个随机的幅度以及发射信号频率
+                amp = (np.random.randint(0, 10) + 1) / 10  # 信号幅度，离散均匀分布取值0.1-1.0的信号幅度
+                sigTmp, _ = sigCW(theta0, sampleTime=recvTime, eleSpacing=d, eleNum=M, sampleFreq=fs, freq0=f0,
+                                  sigAmp=amp, SNR=snr)
+                R_matrix = sigTmp @ sigTmp.T.conjugate() / N
+                datasetList.append((R_matrix, theta0, amp))
 
-    fig = plt.figure()
-    plt.plot(theta_Deg, P_dB)
-    # plt.pcolor(theta_Deg, np.linspace(0, len(v)-1, len(v)), P_dB)
-    plt.rcParams['font.sans-serif'] = ['SimHei']
-    plt.rcParams['axes.unicode_minus'] = False
-    # plt.colorbar()
-    plt.xlabel('angle')
-    plt.show()
+        fileName = "M" + str(M) + "snr" + str(snr) + ".pkl"
+        filePath = os.path.join(datasetFolder, fileName)
+        with open(filePath, 'wb') as f:
+            pickle.dump(datasetList, f)
 
+    # 读取文件
+    # with open('snr=10.pkl', 'rb') as f:
+    #     data = pickle.load(f)
+    print("End Time: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     print("================== プログラム終了 ==================")
