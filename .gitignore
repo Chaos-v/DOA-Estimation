@@ -4,3 +4,4 @@ venv/*
 *.env
 *.m
 *.mat
+*.pkl
