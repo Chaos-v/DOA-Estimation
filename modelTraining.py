@@ -11,6 +11,7 @@ import os
 import pickle
 import numpy as np
 from scipy.io import savemat
+import matplotlib.pyplot as plt
 import torch.cuda
 import torch.nn as nn
 from datasetGenerate import dataSplit
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     # 定义损失函数（loss criterion）
     criterion = nn.CrossEntropyLoss()
     # 创建随机梯度下降优化器（optimizer）
-    optimizer = torch.optim.SGD(netModel.parameters(), lr=0.001, momentum=0.9)
+    optimizer = torch.optim.SGD(netModel.parameters(), lr=0.001, momentum=0.8)
 
     print("Training Start: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     print("Model Training...")
@@ -92,19 +93,22 @@ if __name__ == '__main__':
         for i, (inputs, bearingLabels) in enumerate(trainingDataLoader, 0):
             if torch.cuda.is_available():
                 inputs, bearingLabels = inputs.cuda(), bearingLabels.cuda()
-            optimizer.zero_grad()
+            
+            bearingLabels = torch.squeeze(bearingLabels, 1)  # 降维，可删除，仅当前模型使用
+
+            optimizer.zero_grad()  # 初始化参数grad的值
             outputBearing = netModel(inputs)
-            bearingLabels = torch.squeeze(bearingLabels, 1)  # 降维，可删除
-            loss = criterion(outputBearing, bearingLabels)
-            loss.backward()
-            optimizer.step()
-            runningLoss += loss.item()
-        runningLossList.append(runningLoss / (i + 1))
+            loss = criterion(outputBearing, bearingLabels)  # 使用交叉熵计算损失
+            loss.backward()  # 反向传播
+            optimizer.step()  # 更新随机梯度下降参数
+            runningLoss += loss.item()  # runningLoss用于统计loss平均值
+        # 设置列表存放损失的平均值和损失值
+        runningLossList.append((runningLoss / (i + 1)))  
         lossList.append(loss.data.tolist())
         print('Epoch %d, Running Loss: %.3f, Loss = %f.' % (epoch + 1, runningLoss / (i + 1), loss.data.tolist()))
 
-    TrainingEndedTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    print("Training Ended: " + TrainingEndedTime)
+    TrainingEndedTime = time.strftime("%Y%m%d%H%M", time.localtime())
+    print("Training Ended: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
     # ==================================== 测试模型 ====================================
     # netModel = torch.load(".\\model\\netmodel.pth")
@@ -118,13 +122,23 @@ if __name__ == '__main__':
             outputBearing = netModel(inputs)
             _, predicted = torch.max(outputBearing.data, dim=1)
             total += bearingLabels.size(0)
-            correct += (predicted == bearingLabels).sum().item()
-    print('Accuracy of the network on the validation set: %d %%' % (100 * correct / total))
+            correct += (predicted == bearingLabels).sum()
+    accuracyRate = (100 * torch.true_divide(correct, total)).item()
+    print('Accuracy of the network on the validation set: %d %%' % (accuracyRate))
 
     # ==================================== 保存参数 ====================================
-    savedName = ".\\model\\netmodel" + TrainingEndedTime + ".pth"
-    torch.save(netModel, savedName)
-    savedParam = ".\\model\\netmodelParam" + TrainingEndedTime + ".mat"
-    savemat(savedParam, {"runningLossList":runningLoss, "lossList":lossList, "correctRate": (100 * correct / total)})
+    if accuracyRate >= 50:
+        savedName = ".\\model\\netmodel" + TrainingEndedTime + ".pth"
+        torch.save(netModel, savedName)
+        savedParam = ".\\model\\netmodelParam" + TrainingEndedTime + ".mat"
+        savemat(savedParam, {"runningLossList":runningLossList, "lossList":lossList, "correctRate": (100 * correct / total)})
+        # 损失图
+        plt.switch_backend('agg')
+        plt.plot(list(range(len(runningLossList))),runningLossList)
+        plt.plot(list(range(len(lossList))),lossList)
+        savePicName = ".\\model\\netmodelPic" + TrainingEndedTime + ".jpg"
+        plt.savefig(savePicName)
+    else:
+        print("Low accuracy, not saved")
 
     print("================== プログラム終了 ==================")

@@ -6,8 +6,9 @@
     @Date: 2023/5/22
     @Description: 
 """
-
+from ConvBeamForming import CBF
 from datasetGenerate import *
+import matplotlib.pyplot as plt
 
 
 if __name__ == '__main__':
