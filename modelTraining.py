@@ -93,7 +93,7 @@ if __name__ == '__main__':
         for i, (inputs, bearingLabels) in enumerate(trainingDataLoader, 0):
             if torch.cuda.is_available():
                 inputs, bearingLabels = inputs.cuda(), bearingLabels.cuda()
-            
+
             bearingLabels = torch.squeeze(bearingLabels, 1)  # 降维，可删除，仅当前模型使用
 
             optimizer.zero_grad()  # 初始化参数grad的值
@@ -103,7 +103,7 @@ if __name__ == '__main__':
             optimizer.step()  # 更新随机梯度下降参数
             runningLoss += loss.item()  # runningLoss用于统计loss平均值
         # 设置列表存放损失的平均值和损失值
-        runningLossList.append((runningLoss / (i + 1)))  
+        runningLossList.append((runningLoss / (i + 1)))
         lossList.append(loss.data.tolist())
         print('Epoch %d, Running Loss: %.3f, Loss = %f.' % (epoch + 1, runningLoss / (i + 1), loss.data.tolist()))
 
@@ -120,9 +120,10 @@ if __name__ == '__main__':
             if torch.cuda.is_available():
                 inputs, bearingLabels = inputs.cuda(), bearingLabels.cuda()
             outputBearing = netModel(inputs)
-            _, predicted = torch.max(outputBearing.data, dim=1)
-            total += bearingLabels.size(0)
-            correct += (predicted == bearingLabels).sum()
+            _, predicted = torch.max(outputBearing.data, dim=1)  # 输出预测的向量中最大值的位置
+            # 精确度预测有问题，等待修改
+    #         total += bearingLabels.size(0)
+    #         correct += (predicted == bearingLabels).sum()
     accuracyRate = (100 * torch.true_divide(correct, total)).item()
     print('Accuracy of the network on the validation set: %d %%' % (accuracyRate))
 
@@ -131,11 +132,12 @@ if __name__ == '__main__':
         savedName = ".\\model\\netmodel" + TrainingEndedTime + ".pth"
         torch.save(netModel, savedName)
         savedParam = ".\\model\\netmodelParam" + TrainingEndedTime + ".mat"
-        savemat(savedParam, {"runningLossList":runningLossList, "lossList":lossList, "correctRate": (100 * correct / total)})
+        savemat(savedParam,
+                {"runningLossList": runningLossList, "lossList": lossList, "correctRate": (100 * correct / total)})
         # 损失图
         plt.switch_backend('agg')
-        plt.plot(list(range(len(runningLossList))),runningLossList)
-        plt.plot(list(range(len(lossList))),lossList)
+        plt.plot(list(range(len(runningLossList))), runningLossList)
+        plt.plot(list(range(len(lossList))), lossList)
         savePicName = ".\\model\\netmodelPic" + TrainingEndedTime + ".jpg"
         plt.savefig(savePicName)
     else:

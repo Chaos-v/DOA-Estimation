@@ -47,7 +47,8 @@ def signalGenerate(theta0, sampleTime=10, eleNum=10, eleSpacing=1.5,
     N = int(sampFreq * sampleTime)  # 每个水听器采集点数
     tScale = np.arange(0, sampleTime, 1 / sampFreq)
 
-    arraySignal = np.zeros((eleNum, N), dtype=complex)  # 初始化阵列，全0
+    # arraySignal = np.zeros((eleNum, N), dtype=complex)  # 初始化阵列，全0
+    arraySignal = np.zeros((eleNum, N), dtype=float)
     for index in range(eleNum):
         noise = np.random.normal(meanNoise, varNoise, N)  # 每循环一次先生成对应水听器的噪声
         # noise = np.zeros(int(N))
@@ -56,7 +57,7 @@ def signalGenerate(theta0, sampleTime=10, eleNum=10, eleSpacing=1.5,
                                      transmitSignal, np.zeros(int(sigInterval / 2 * sampFreq - np.ceil(tmpTou * sampFreq)))))
         tmpNCycle = int(np.ceil(N / len(tmpFullSig)))
         tmpEleData = np.tile(tmpFullSig, tmpNCycle)[:N] + noise
-        tmpEleData = hilbert(tmpEleData)
+        # tmpEleData = hilbert(tmpEleData)
         arraySignal[index, :] = tmpEleData
 
     return arraySignal, tScale
