@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-    @ProjectName: cnnNetDOA
     @File: testNet.py
     @Author: Chaos
     @Date: 2023/6/19
@@ -9,13 +8,13 @@
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from DOAEstimation import CNN_DOAEstimation
-from NetModel import Net
+from NetModel import NetM10
 
 
 if __name__ == '__main__':
     print("================== testNet ==================")
     # 输入数据加载
-    datapath = "..\\dataraw\\sdata1.mat"
+    datapath = "..\\dataraw\\sdata_theta-25snr20.mat"
     signal = loadmat(datapath)["signal"]
 
     winLen, overlapLen = 56320, 5120  # 设置滑动窗长度以及重叠部分

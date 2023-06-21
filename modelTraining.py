@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-    @ProjectName: ConvBeamForming.py
     @File: modelTraining.py
     @Author: Chaos
     @Date: 2023/6/8
@@ -14,39 +13,51 @@ from scipy.io import savemat
 import matplotlib.pyplot as plt
 import torch.cuda
 import torch.nn as nn
-from datasetGenerate import dataSplit
+# 导入网络模型对象
+from CNNmodel.NetModel import NetM20
 
 
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()  # 创建基类 nn.Module 的 1 个实例
-        # 根据架构图创建全连接层
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(in_channels=2, out_channels=32, kernel_size=2, stride=1, padding='same'),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=2, stride=1, padding='same'),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=1)
-        )
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding='same'),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=3)
-        )
-        self.fc = nn.Sequential(
-            nn.Linear(in_features=576, out_features=1024),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=1024, out_features=512),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=512, out_features=181)
-        )
+def dataSplit(fpath):
+    """加载同时预处理数据集，只针对特定数据生效，并且做一个分割，分割成训练集，验证集，测试集并保存"""
+    with open(fpath, 'rb') as f:
+        data = pickle.load(f)
 
-    def forward(self, x):
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = x.view(-1, 576)  # 返回新张量，数据相同，形状不同
-        x = self.fc(x)
-        return x
+    # ==================================== 数据集预处理 ====================================
+    dataset = [None] * len(data)
+    tmpData = np.zeros((2, 10, 10), dtype=float)
+    thetaList = list(range(-90, 91, 1))
+    for i in range(len(data)):
+        tmpData[0] = data[i][0].real
+        tmpData[1] = data[i][0].imag
+        index = thetaList.index(data[i][1])
+        tmpBearing = np.zeros((1, 181), dtype=int)
+        tmpBearing[:, index] = 1
+        dataset[i] = (torch.Tensor(tmpData), torch.Tensor(tmpBearing))
+
+    training = [None] * 101903
+    validate = 33847 * [None]
+    test = 45250 * [None]
+    for i in range(181):
+        index = i * 1000
+        training[563 * i:563 * (i + 1)] = dataset[index:index + 563]
+        validate[187*i:187*(i+1)] = dataset[index+563:index + 750]
+        test[250*i:250*(i+1)] = dataset[index+750:index+1000]
+
+    # 保存数据集
+    (dataPath, dataName) = os.path.split(fpath)
+    subFolderName = dataName.split(".")[0]
+    folderPath = os.path.join(dataPath, subFolderName)
+    if not os.path.isdir(folderPath):
+        os.makedirs(folderPath)
+
+    with open(os.path.join(folderPath, "trainLoader.pkl"), 'wb') as f:
+        pickle.dump(training, f)
+    with open(os.path.join(folderPath, "validation.pkl"), 'wb') as f:
+        pickle.dump(validate, f)
+    with open(os.path.join(folderPath, "testLoader.pkl"), 'wb') as f:
+        pickle.dump(test, f)
+
+    return training, validate, test
 
 
 if __name__ == '__main__':
@@ -55,7 +66,7 @@ if __name__ == '__main__':
 
     # ==================================== 导入数据集 ====================================
     filepath = ".\\dataset"
-    filename = "M10SNR20.pkl"
+    filename = "M20SNR20.pkl"
 
     subFolderPath = os.path.join(filepath, filename.split(".")[0])
 
@@ -73,7 +84,7 @@ if __name__ == '__main__':
     trainingDataLoader = torch.utils.data.DataLoader(trainLoader, batch_size=16, shuffle=True)
 
     # 初始化模型并转移到GPU上
-    netModel = Net()
+    netModel = NetM20()
     if torch.cuda.is_available():
         netModel.cuda()
 
@@ -110,9 +121,7 @@ if __name__ == '__main__':
     TrainingEndedTime = time.strftime("%Y%m%d%H%M", time.localtime())
     print("Training Ended: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
-    # ==================================== 测试模型 ====================================
-    # netModel = torch.load(".\\model\\netmodel.pth")
-
+    # ==================================== 验证模型 ====================================
     correct = 0
     total = 0
     with torch.no_grad():
@@ -121,10 +130,14 @@ if __name__ == '__main__':
                 inputs, bearingLabels = inputs.cuda(), bearingLabels.cuda()
             outputBearing = netModel(inputs)
             _, predicted = torch.max(outputBearing.data, dim=1)  # 输出预测的向量中最大值的位置
-            # 精确度预测有问题，等待修改
+            _, reality = torch.max(bearingLabels, dim=1)
+            if predicted == reality:
+                correct += 1
+            total += 1
     #         total += bearingLabels.size(0)
     #         correct += (predicted == bearingLabels).sum()
-    accuracyRate = (100 * torch.true_divide(correct, total)).item()
+    # accuracyRate = (100 * torch.true_divide(correct, total)).item()
+    accuracyRate = 100 * correct / total  # 计算正确率
     print('Accuracy of the network on the validation set: %d %%' % (accuracyRate))
 
     # ==================================== 保存参数 ====================================

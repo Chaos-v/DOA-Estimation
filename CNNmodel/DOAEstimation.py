@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-    @ProjectName: testNet.py
+    @ProjectName: CNN_DOA
     @File: DOAEstimation.py
     @Author: Chaos
     @Date: 2023/6/19
-    @Description: 基于 CNN 的 DOA 方法，包括算法的函数封装以及辅助函数
+    @Description: 基于 CNN 的 DOA 方法，包括算法的函数封装以及辅助函数，主函数：CNN_DOAEstimation
 """
 import numpy as np
 from scipy.signal import hilbert
@@ -22,7 +22,7 @@ def CNN_DOAEstimation(sig, win=10, overlap=0):
     :return:
     """
     # ==================== 模型加载 ====================
-    model = torch.load(".\\model\\netmodel202306172325.pth")
+    model = torch.load(".\\model\\netM10F0500.pth")
     if torch.cuda.is_available():
         model.cuda()
 
@@ -101,7 +101,7 @@ def outputNormalize(v):
     """
     vRange = np.max(v) - np.min(v)
     vp = (v - np.min(v)) / vRange
-    # vp[vp < 0.95] = 0  # 可以让预测结果更直观
+    vp[vp < 0.95] = 0  # 可以让预测结果更直观
     return vp
 
 

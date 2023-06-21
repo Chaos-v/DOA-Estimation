@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    @ProjectName: DecisionAlg
+    @ProjectName: CBF
     @File: test.py
     @Author: Chaos
     @Date: 2023/5/22
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
     print("================== 常规波束形成计算部分 ==================")
     # 加载数据
-    savedName = "..\\dataraw\\sdata1.mat"
+    savedName = "..\\dataraw\\sdata_theta25snr20.mat"
     matdata = loadmat(savedName)
     signal, f0 = matdata["signal"], float(matdata["f0"])
 
