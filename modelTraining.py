@@ -24,7 +24,7 @@ def dataSplit(fpath):
 
     # ==================================== 数据集预处理 ====================================
     dataset = [None] * len(data)
-    tmpData = np.zeros((2, 10, 10), dtype=float)
+    tmpData = np.zeros((2, 20, 20), dtype=float)
     thetaList = list(range(-90, 91, 1))
     for i in range(len(data)):
         tmpData[0] = data[i][0].real
