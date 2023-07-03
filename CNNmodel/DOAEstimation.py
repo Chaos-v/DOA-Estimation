@@ -11,23 +11,26 @@ from scipy.signal import hilbert
 # 以下是CNN_DOAEstimation函数需要的包
 import torch
 import matplotlib.pyplot as plt
+from NetModel import NetM20
 
 
-def CNN_DOAEstimation(sig, win=10, overlap=0):
+def CNN_DOAEstimation(sigDict: dict, win=56320, overlap=5120):
     """
     完整的基于 CNN 的DOA算法的封装，用于软件内部调用，使用前需要设置模型路径
-    :param sig: 输入的阵列信号数据，阵元 × 采集信号（dim0 × dim1）
+    :param sigDict: 包含阵列信号的字典变量，其中阵列信号部分中：阵元 × 采集信号（dim0 × dim1）
     :param win: 表示滑动窗长度的快拍数。长度 = 采样频率 × 窗口时间长度。
     :param overlap: 相邻两个滑动窗重叠的快拍数。长度 = 采样频率 × 重叠部分的时间长度。
     :return:
     """
     # ==================== 模型加载 ====================
-    model = torch.load(".\\model\\netM10F0500.pth")
+    modelPath = ".\\model\\M20F0500SNRG_net.pth"
+    model = NetM20()
+    model.load_state_dict(torch.load(modelPath))
     if torch.cuda.is_available():
         model.cuda()
 
     # ==================== 模型计算部分 ====================
-    sig = sigPreProcess(sig)  # 阵列数据预处理
+    sig = sigPreProcess(sigDict)  # 阵列数据预处理
 
     vSignal = slideWinView(sig, win, overlap)  # 设置滑动窗截取
     dim0, dim1, dim2 = vSignal.shape
@@ -60,13 +63,16 @@ def CNN_DOAEstimation(sig, win=10, overlap=0):
     return bearingProbability, thetaDeg, fig
 
 
-def sigPreProcess(sig):
+def sigPreProcess(sigDict: dict):
     """
     针对传入的实际采集的阵列信号进行预处理，预处理方法根据实际需要添加在该函数中，最终输出预处理后的阵列信号变量。
     该函数可以根据实际需要进行调用。
-    :param sig: 阵列信号，阵元 × 采集信号（行 × 列）
+    :param sigDict: 阵列信号，阵元 × 采集信号（行 × 列）
     :return: arraySig
     """
+    # 从传入的字典变量中提取需要信息
+    sig = sigDict["signal"]
+
     m = np.size(sig, 0)  # 输入信号矩阵的行数，也即阵元的数量
     n = np.size(sig, 1)  # 输入信号矩阵的列数
 

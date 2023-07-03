@@ -5,3 +5,4 @@ venv/*
 *.m
 *.mat
 *.pkl
+*.jpg

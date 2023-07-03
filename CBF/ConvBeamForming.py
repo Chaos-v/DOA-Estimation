@@ -16,27 +16,28 @@
 """
 import numpy as np
 from scipy.signal import hilbert
+from scipy.fftpack import fft
 import matplotlib.pyplot as plt
 
 
-def mainCBF(sig, f0, win=10, overlap=0):
+def mainCBF(sigDict: dict, win=56320, overlap=5120):
     """
     完整CBF算法的封装，用于软件内部调用，使用前提是已知相关参数。
 
     封装时需要更改:
     (1) 滑动窗函数 (slideWinView) 的输入变量 win，overlap 的默认值；
     (2) 常规波束形成算法 (CBF) 函数的输入变量 freq0, delta 的默认值。
+    (3) 预处理函数 (CBFPreProcess) 中阵列的默认采样频率 fs 的默认值，如果 mainCBF 方法中传入的参量中含有采样频率的key值，则忽略该条
     其中，变量 win, overlap, freq0 的默认值可直接在 mainCBF 函数中修改，修改后直接传递到对应函数。
     变量 delta 的值需要单独在 CBFCore 函数中进行修改。
 
-    :param sig: 阵列信号，阵元 × 采集信号（行 × 列）
-    :param f0: 发射信号的估计频率
+    :param sigDict: 包含阵列信号的字典变量，其中阵列信号部分中：阵元 × 采集信号（行 × 列）
     :param win: 表示滑动窗长度的快拍数。Len = 采样频率 × 窗口时间长度。
     :param overlap: 相邻两个滑动窗重叠的快拍数。Len = 采样频率 × 重叠部分的时间长度
     :return: P_dB, theta_Deg, fig
     """
     # 阵列信号预处理
-    sigPreprocess = CBFPreProcess(sig)
+    sigPreprocess, f0 = CBFPreProcess(sigDict)
     # 获取滑动窗
     v = slideWinView(sigPreprocess, win, overlap)
 
@@ -59,23 +60,54 @@ def mainCBF(sig, f0, win=10, overlap=0):
     return P_dB, theta_Deg, fig
 
 
-def CBFPreProcess(sig):
+def CBFPreProcess(sigDict):
     """
     针对传入的实际采集的阵列信号进行预处理，预处理方法根据实际需要添加在该函数中，最终输出预处理后的阵列信号变量。
     该函数可以根据实际需要进行调用。
-    :param sig: 阵列信号，阵元 × 采集信号（行 × 列）
+    :param sigDict: 阵列信号，阵元 × 采集信号（行 × 列）
     :return: arraySig
     """
+    # 提取需要信息
+    sig = sigDict["signal"]
+
+    if 'f0' in sigDict.keys():  # 获取发射信号的可能频率
+        f0 = float(sigDict["f0"])
+    else:
+        if 'fs' in sigDict.keys():
+            fs = sigDict["fs"]
+            f0 = getFreq(sig, fs)
+        else:
+            f0 = getFreq(sig, fs=51200)  # 这块而自己设置
+
     m = np.size(sig, 0)  # 输入信号矩阵的行数，也即阵元的数量
     n = np.size(sig, 1)  # 输入信号矩阵的列数
 
-    # Hilbert 变换
     arraySig = np.zeros((m, n), dtype=complex)
     for i in range(m):
+        # Hilbert 变换
         tmp = sig[i, :]
         arraySig[i, :] = hilbert(tmp)
 
-    return arraySig
+    return arraySig, f0
+
+
+def getFreq(sig, fs=51200):
+    """
+    获取信号的可能频率，其实就是个简单的fft
+    :param sig: 阵列信号，阵元 × 采集信号（行 × 列）
+    :param fs:
+    :return:
+    """
+    freq = 0
+    tmpSig = sig[0, :]
+    L = len(tmpSig)  # Length of signal
+    # 计算信号的傅里叶变换，计算双侧频谱 P2。然后基于 P2 和偶数信号长度 L 计算单侧频谱 P1。
+    P2 = abs(fft(tmpSig) / L)
+    P1 = P2[: int(L/2+1)]
+    P1[1: -1] = 2 * P1[1: -1]
+    # f_list = fs * np.linspace(start=0, stop=L/2, num=int(L/2+1)) / L
+    freq = float(fs * np.argmax(P1) / L)
+    return freq
 
 
 def slideWinView(sig, win, overlap):

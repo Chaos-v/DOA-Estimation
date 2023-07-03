@@ -93,5 +93,6 @@ def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10, sampleFreq=51200, fre
 
     return arraySignal, tScale
 
+
 if __name__ == '__main__':
     print("================== signalGenerator ==================")

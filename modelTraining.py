@@ -13,6 +13,7 @@ from scipy.io import savemat
 import matplotlib.pyplot as plt
 import torch.cuda
 import torch.nn as nn
+from pathLoader import getpath
 # 导入网络模型对象
 from CNNmodel.NetModel import NetM20
 
@@ -65,8 +66,13 @@ if __name__ == '__main__':
     print("Start Time: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
     # ==================================== 导入数据集 ====================================
-    filepath = ".\\dataset"
-    filename = "M20SNR20.pkl"
+    datasetPath = getpath("datasetPath").split("\\")
+    filepath = ''
+    for i in range(len(datasetPath)):
+        if ".pkl" in datasetPath[i]:
+            for tmp in datasetPath[:i]:
+                filepath = os.path.join(filepath,tmp)
+            filename = datasetPath[i]
 
     subFolderPath = os.path.join(filepath, filename.split(".")[0])
 
@@ -92,11 +98,11 @@ if __name__ == '__main__':
     # 定义损失函数（loss criterion）
     criterion = nn.CrossEntropyLoss()
     # 创建随机梯度下降优化器（optimizer）
-    optimizer = torch.optim.SGD(netModel.parameters(), lr=0.001, momentum=0.8)
+    optimizer = torch.optim.SGD(netModel.parameters(), lr=0.001, momentum=0.9)
 
     print("Training Start: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     print("Model Training...")
-    epochs = 50
+    epochs = 20
     runningLossList = []
     lossList = []
     for epoch in range(epochs):
@@ -119,6 +125,7 @@ if __name__ == '__main__':
         print('Epoch %d, Running Loss: %.3f, Loss = %f.' % (epoch + 1, runningLoss / (i + 1), loss.data.tolist()))
 
     TrainingEndedTime = time.strftime("%Y%m%d%H%M", time.localtime())
+    savedPath = getpath("netModelSavedPath")
     print("Training Ended: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
     # ==================================== 验证模型 ====================================
@@ -142,16 +149,18 @@ if __name__ == '__main__':
 
     # ==================================== 保存参数 ====================================
     if accuracyRate >= 50:
-        savedName = ".\\model\\netmodel" + TrainingEndedTime + ".pth"
-        torch.save(netModel, savedName)
-        savedParam = ".\\model\\netmodelParam" + TrainingEndedTime + ".mat"
+        # 保存网络模型参数
+        savedName = savedPath + "\\netmodel" + TrainingEndedTime + ".pth"
+        torch.save(netModel.state_dict(), savedName)
+        # 保存损失、平均损失以及正确率
+        savedParam = savedPath + "\\netmodelParam" + TrainingEndedTime + ".mat"
         savemat(savedParam,
                 {"runningLossList": runningLossList, "lossList": lossList, "correctRate": (100 * correct / total)})
-        # 损失图
+        # 保存损失图
         plt.switch_backend('agg')
         plt.plot(list(range(len(runningLossList))), runningLossList)
         plt.plot(list(range(len(lossList))), lossList)
-        savePicName = ".\\model\\netmodelPic" + TrainingEndedTime + ".jpg"
+        savePicName = savedPath + "\\netmodelPic" + TrainingEndedTime + ".jpg"
         plt.savefig(savePicName)
     else:
         print("Low accuracy, not saved")

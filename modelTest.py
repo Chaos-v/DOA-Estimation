@@ -8,20 +8,22 @@
 import pickle
 import numpy as np
 import torch.cuda
+from pathLoader import getpath
 # 导入网络模型对象
-from CNNmodel.NetModel import NetM10
+from CNNmodel.NetModel import NetM20
 
 
 if __name__ == '__main__':
     print("================== modelValidation ==================")
-    testSetPath = ".\\dataset\\M10SNR20\\testLoader.pkl"
-    modelPath = ".\\CNNmodel\\model\\netM10F0500.pth"
+    testSetPath = getpath("testSetPath")
+    modelPath = getpath("netModelPath")
 
     with open(testSetPath, 'rb') as f:
         testSet = pickle.load(f)
     # testLoader = torch.utils.data.DataLoader(testSet, batch_size=1, shuffle=True)
 
-    model = torch.load(modelPath)
+    model = NetM20()
+    model.load_state_dict(torch.load(modelPath))
     if torch.cuda.is_available():
         model.cuda()
 
@@ -38,4 +40,4 @@ if __name__ == '__main__':
                 correct += 1
             total += 1
     accuracyRate = 100 * correct / total
-    print('Accuracy of the network on the validation set: %d %%' % (accuracyRate))
+    print('Accuracy of the network on the test set: %d %%' % (accuracyRate))

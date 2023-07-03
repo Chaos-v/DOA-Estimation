@@ -1,0 +1,15 @@
+# Path File
+
+# e.g. mat File saved Path
+dataRawSavedPath = .\dataraw\sdata_theta
+
+# NetModel Training Part
+datasetPath = .\dataset\M20SNR20.pkl
+netModelSavedPath = .\\CNNmodel\\model
+
+# NetModel Test Part
+netModelPath = .\CNNmodel\model\M20F0500SNR20_net.pth
+testSetPath = .\dataset\M20SNR20\testLoader.pkl
+
+# test data File Path
+testDataPath = ..\\dataraw\\sdata_M20theta25snr10.mat
