@@ -52,7 +52,14 @@ if __name__ == '__main__':
             for i in range(sampTimes):
                 # 每次循环生成一个随机的幅度以及发射信号频率
                 amp = (np.random.randint(0, 10) + 1) / 10  # 信号幅度，离散均匀分布取值0.1-1.0的信号幅度
-                sigTmp, _ = sigCW(theta0, sampleTime=recvTime, eleSpacing=d, eleNum=M, sampleFreq=fs, freq0=f0, sigAmp=amp, SNR=snr)
+                sigRaw, _ = sigCW(theta0, sampleTime=recvTime, eleSpacing=d, eleNum=M, sampleFreq=fs, freq0=f0, sigAmp=amp, SNR=snr)
+
+                # 实信号需要 Hilbert 变换，临时补救一下
+                sigTmp = np.zeros((np.size(sigRaw, 0), np.size(sigRaw, 1)), dtype=complex)
+                for i in range(np.size(sigRaw, 0)):
+                    tmp = sigRaw[i, :]
+                    sigTmp[i, :] = hilbert(tmp)
+                
                 R_matrix = sigTmp @ sigTmp.T.conjugate() / N
                 datasetList[num] = (R_matrix, theta0, amp)
                 num += 1
