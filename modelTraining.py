@@ -87,7 +87,7 @@ if __name__ == '__main__':
         with open(os.path.join(subFolderPath, "validation.pkl"), 'rb') as f:
             validation = pickle.load(f)
 
-    trainingDataLoader = torch.utils.data.DataLoader(trainLoader, batch_size=16, shuffle=True)
+    trainingDataLoader = torch.utils.data.DataLoader(trainLoader, batch_size=64, shuffle=True)
 
     # 初始化模型并转移到GPU上
     netModel = NetM20()
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     print("Training Start: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     print("Model Training...")
-    epochs = 20
+    epochs = 50
     runningLossList = []
     lossList = []
     for epoch in range(epochs):
