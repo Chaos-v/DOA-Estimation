@@ -6,3 +6,4 @@ venv/*
 *.mat
 *.pkl
 *.jpg
+*.pth

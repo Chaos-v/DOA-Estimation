@@ -7,6 +7,7 @@
 """
 import numpy as np
 from scipy.signal import hilbert
+from numpy.random import uniform
 
 
 def signalGenerate(theta0, sampleTime=10, eleNum=10, eleSpacing=1.5,
@@ -27,7 +28,7 @@ def signalGenerate(theta0, sampleTime=10, eleNum=10, eleSpacing=1.5,
     :param SNR: 信噪比
     :return: arraySignal，tScale
     """
-    c = 1500  # 声速
+    c = uniform(low=1450, high=1550)  # 声速
     # 将入射角度转化为弧度
     theta0 = np.deg2rad(theta0)
     tou0 = eleSpacing / c * np.sin(theta0)  # 两相邻接收器接收声压的时间差
@@ -58,7 +59,7 @@ def signalGenerate(theta0, sampleTime=10, eleNum=10, eleSpacing=1.5,
     return arraySignal, tScale
 
 
-def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10, sampleFreq=51200, freq0=50, sigAmp=1, SNR=0):
+def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10, sampleFreq=51200, freq0=50, sigAmp=1, SNR=0, hil=False):
     """
     生成无占空比的，连续的水平阵列采样信号
 
@@ -70,8 +71,10 @@ def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10, sampleFreq=51200, fre
     :param freq0: 发射信号频率，单位：Hz
     :param sigAmp: 发射信号幅度
     :param SNR: 信噪比
+    :param hil: 是否希尔伯特变换，bool，默认false
     :return: arraySignal，tScale
     """
+    # c = uniform(low=1450, high=1550)  # 声速
     c = 1500
     theta0 = np.deg2rad(theta0)
     tou0 = eleSpacing / c * np.sin(theta0)  # 时间差
@@ -84,12 +87,18 @@ def sigCW(theta0, sampleTime=2, eleSpacing=1.5, eleNum=10, sampleFreq=51200, fre
     transmitSignal = sigAmp * np.sin(2 * np.pi * freq0 * tScale)  # 标准发射信号部分
     meanNoise, varNoise = 0, (np.sqrt(np.sum(transmitSignal ** 2) / len(transmitSignal)) / (10 ** (SNR / 10)))
 
-    arraySignal = np.zeros((eleNum, N), dtype=float)
-    for index in range(eleNum):
-        noise = np.random.normal(meanNoise, varNoise, N)
-        tmpSig = sigAmp * np.sin(2 * np.pi * freq0 * tScale - index * phi0)  # 发射信号部分
-        # arraySignal[index, :] = hilbert(tmpSig + noise)  # hilbert变换
-        arraySignal[index, :] = tmpSig + noise
+    if hil is False:
+        arraySignal = np.zeros((eleNum, N), dtype=float)
+        for index in range(eleNum):
+            noise = np.random.normal(meanNoise, varNoise, N)
+            tmpSig = sigAmp * np.sin(2 * np.pi * freq0 * tScale - index * phi0)  # 发射信号部分
+            arraySignal[index, :] = tmpSig + noise
+    else:
+        arraySignal = np.zeros((eleNum, N), dtype=complex)
+        for index in range(eleNum):
+            noise = np.random.normal(meanNoise, varNoise, N)
+            tmpSig = sigAmp * np.sin(2 * np.pi * freq0 * tScale - index * phi0)  # 发射信号部分
+            arraySignal[index, :] = hilbert(tmpSig + noise)  # hilbert变换
 
     return arraySignal, tScale
 

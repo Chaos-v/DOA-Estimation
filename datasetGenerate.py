@@ -12,6 +12,7 @@ import pickle
 import os
 import time
 from signalGenerator import sigCW
+from tqdm import tqdm
 
 
 if __name__ == '__main__':
@@ -19,8 +20,8 @@ if __name__ == '__main__':
     print("Start Time: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     # 论文需求需要改变的参数
     thetaList = list(range(-90, 91, 1))
-    snrList = [20, 10, 0, -10]
-    M = 20  # 阵元数量
+    snrList = [20]
+    M = 32  # 阵元数量
 
     # 固定不变参数
     recvTime = 1  # 信号接收时间
@@ -29,38 +30,33 @@ if __name__ == '__main__':
     N = recvTime * fs  # 采样点数
 
     f0_list = [500]  # 取500是满足阵元间距等于半波长的条件
-    f0 = f0_list[np.random.randint(0, len(f0_list))]  # 发射信号频率
+    # f0 = f0_list[np.random.randint(0, len(f0_list))]  # 发射信号频率
+    f0 = f0_list[0]  # 发射信号频率
 
     sampTimes = 1000  # 每个角度需要的采样次数
     lenList = int(sampTimes * len(thetaList))
 
     # 创建文件存放目录
-    datasetFolder = 'dataset'
+    datasetFolder = 'dataset\\M32tmp'
     if not os.path.exists(datasetFolder):
         os.mkdir(os.path.join(datasetFolder))
 
     print("Dataset Generating... Do not close the VSCode.")
 
     for snr in snrList:
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "\tSNR = " + str(snr))
+        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "\tSNR = " + str(snr) + "\tM = " + str(M))
         # 不同信噪比下创建数据集
         datasetList = [None] * lenList
         num = 0
-        for thetaIndex in range(len(thetaList)):
+        for thetaIndex in tqdm(range(len(thetaList)), desc="Data Generating"):
             theta0 = thetaList[thetaIndex]
             # 不同入射角
             for i in range(sampTimes):
                 # 每次循环生成一个随机的幅度以及发射信号频率
                 amp = (np.random.randint(0, 10) + 1) / 10  # 信号幅度，离散均匀分布取值0.1-1.0的信号幅度
-                sigTmp, _ = sigCW(theta0, sampleTime=recvTime, eleSpacing=d, eleNum=M, sampleFreq=fs, freq0=f0, sigAmp=amp, SNR=snr)
+                sigRaw, _ = sigCW(theta0, sampleTime=recvTime, eleSpacing=d, eleNum=M, sampleFreq=fs, freq0=f0, sigAmp=amp, SNR=snr, hil=True)
 
-                # 实信号需要 Hilbert 变换，临时补救一下
-                sigTmp = np.zeros((np.size(sigRaw, 0), np.size(sigRaw, 1)), dtype=complex)
-                for i in range(np.size(sigRaw, 0)):
-                    tmp = sigRaw[i, :]
-                    sigTmp[i, :] = hilbert(tmp)
-
-                R_matrix = sigTmp @ sigTmp.T.conjugate() / N
+                R_matrix = sigRaw @ sigRaw.T.conjugate() / N
                 datasetList[num] = (R_matrix, theta0, amp)
                 num += 1
 

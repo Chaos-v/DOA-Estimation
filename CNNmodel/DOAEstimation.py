@@ -23,7 +23,7 @@ def CNN_DOAEstimation(sigDict: dict, win=56320, overlap=5120):
     :return:
     """
     # ==================== 模型加载 ====================
-    modelPath = ".\\model\\M20F0500SNRG_net.pth"
+    modelPath = ".\\CNNmodel\\model\\M20_SNRG_model.pth"
     model = NetM20()
     model.load_state_dict(torch.load(modelPath))
     if torch.cuda.is_available():

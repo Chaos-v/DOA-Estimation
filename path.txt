@@ -4,12 +4,13 @@
 dataRawSavedPath = .\dataraw\sdata_theta
 
 # NetModel Training Part
-datasetPath = .\dataset\M10SNR20.pkl
+datasetPath = .\dataset\M32tmp\M32SNR20.pkl
 netModelSavedPath = .\\CNNmodel\\model
 
 # NetModel Test Part
-netModelPath = .\CNNmodel\model\netM20F0500.pth
-testSetPath = .\dataset\M20SNR20\testLoader.pkl
+netModelPath = .\CNNmodel\model\M32_netModel\M32_SNR0_model.pth
+testSetPath = .\dataset\M32tmp\M32SNR0\testLoader.pkl
 
 # test data File Path
 testDataPath = ..\\dataraw\\sdata_M20theta25snr10.mat
+
