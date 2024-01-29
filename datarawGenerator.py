@@ -13,9 +13,9 @@ from signalGenerator import sigCW
 if __name__ == '__main__':
     print("================== signalGenerator ==================")
     # ==================== 参数部分 ====================
-    theta0 = 25
+    theta0 = -25
     recevTime = 10  # 信号接收时间
-    M = 20  # 阵元数量
+    M = 32  # 阵元数量
     d = 1.5  # 阵元间距
     fs = 51200  # 水平阵采样频率
     # c = 1500  # 声速

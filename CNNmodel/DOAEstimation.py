@@ -11,10 +11,10 @@ from scipy.signal import hilbert
 # 以下是CNN_DOAEstimation函数需要的包
 import torch
 import matplotlib.pyplot as plt
-from NetModel import NetM20
+from NetModel import NetM32
 
 
-def CNN_DOAEstimation(sigDict: dict, win=56320, overlap=5120):
+def CNN_DOAEstimation(sigDict: dict, win=51200, overlap=51200):
     """
     完整的基于 CNN 的DOA算法的封装，用于软件内部调用，使用前需要设置模型路径
     :param sigDict: 包含阵列信号的字典变量，其中阵列信号部分中：阵元 × 采集信号（dim0 × dim1）
@@ -23,8 +23,8 @@ def CNN_DOAEstimation(sigDict: dict, win=56320, overlap=5120):
     :return:
     """
     # ==================== 模型加载 ====================
-    modelPath = ".\\CNNmodel\\model\\M20_SNRG_model.pth"
-    model = NetM20()
+    modelPath = ".\\CNNmodel\\model_M32\\M32_SNRG_model.pth"
+    model = NetM32()
     model.load_state_dict(torch.load(modelPath))
     if torch.cuda.is_available():
         model.cuda()
@@ -54,6 +54,7 @@ def CNN_DOAEstimation(sigDict: dict, win=56320, overlap=5120):
     thetaDeg = np.linspace(-90, 90, 181)
     fig = plt.figure()
     plt.pcolor(thetaDeg, np.linspace(0, dim0 - 1, dim0), bearingProbability)
+    plt.ylim(0, dim0-1)
     plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
     plt.colorbar()

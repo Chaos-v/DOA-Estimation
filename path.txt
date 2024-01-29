@@ -4,7 +4,7 @@
 dataRawSavedPath = .\dataraw\sdata_theta
 
 # NetModel Training Part
-datasetPath = .\dataset\M32tmp\M32SNR20.pkl
+datasetPath = .\dataset\M10SNR20.pkl
 netModelSavedPath = .\\CNNmodel\\model
 
 # NetModel Test Part

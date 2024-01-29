@@ -6,6 +6,8 @@
     @Description: 网络模型
 """
 import torch.nn as nn
+import torch.cuda
+from torchviz import make_dot
 
 
 class NetM10(nn.Module):
@@ -138,7 +140,25 @@ class NetM32(nn.Module):
         x = self.fc(x)
         return x
 
+
 if __name__ == '__main__':
     print("================== modelTraining ==================")
+    import os
+    import pickle
 
+    dataPath = ".\\dataset\\M20SNR20"
+    with open(os.path.join(dataPath, "testLoader.pkl"), 'rb') as f:
+            trainLoader = pickle.load(f)
+    x = trainLoader[0][0]
+    label1 = trainLoader[0][1]
+
+    model = NetM20()
+    y = model(x)
+    # criterion = nn.CrossEntropyLoss()
+    # loss = criterion(y, label1)
+    # loss.backward()
+
+    # g = make_dot(y, params=dict(model.named_parameters()), show_attrs=True, show_saved=True)
+    g = make_dot(y)
+    g.render(filename='.\\test', view=False, format='pdf')
     print("================== プログラム終了 ==================")

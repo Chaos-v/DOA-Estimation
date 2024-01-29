@@ -16,7 +16,7 @@ if __name__ == '__main__':
     print("================== 常规波束形成计算部分 ==================")
     startTime = time.time()
     # 加载数据
-    savedName = "..\\dataraw\\sdata_M20theta25snr15.mat"
+    savedName = ".\\dataraw\\sdata_M32theta-25snr-10.mat"
     signalDict = loadmat(savedName)
     signalDict['fs'] = 51200  # 由于原始数据中没有 fs 的 key 值，测试时填上
 
@@ -29,7 +29,8 @@ if __name__ == '__main__':
 
     # 计算数据
     _, _, fig = mainCBF(signalDict)
-    fig.savefig("./1.jpg")
+    plt.show()
+    # fig.savefig("./1.jpg")
 
     endTime = time.time()
     t_sum = endTime - startTime

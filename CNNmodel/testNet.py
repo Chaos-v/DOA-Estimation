@@ -16,7 +16,7 @@ if __name__ == '__main__':
     print("================== testNet ==================")
     startTime = time.time()
     # 输入数据加载
-    datapath = ".\\dataraw\\sdata_M20theta-25snr-10.mat"
+    datapath = ".\\dataraw\\sdata_M32theta-25snr-10.mat"
     signalDict = loadmat(datapath)
 
     # winLen, overlapLen = 56320, 5120  # 设置滑动窗长度以及重叠部分

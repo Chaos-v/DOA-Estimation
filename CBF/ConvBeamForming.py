@@ -20,7 +20,7 @@ from scipy.fftpack import fft
 import matplotlib.pyplot as plt
 
 
-def mainCBF(sigDict: dict, win=56320, overlap=5120):
+def mainCBF(sigDict: dict, win=51200, overlap=51200):
     """
     完整CBF算法的封装，用于软件内部调用，使用前提是已知相关参数。
 
@@ -40,6 +40,7 @@ def mainCBF(sigDict: dict, win=56320, overlap=5120):
     sigPreprocess, f0 = CBFPreProcess(sigDict)
     # 获取滑动窗
     v = slideWinView(sigPreprocess, win, overlap)
+    dim0, _, _ = v.shape
 
     # 每一个窗做一个 CBF
     for i in range(len(v)):
@@ -51,6 +52,7 @@ def mainCBF(sigDict: dict, win=56320, overlap=5120):
 
     fig = plt.figure()
     plt.pcolor(theta_Deg, np.linspace(0, len(v) - 1, len(v)), P_dB)
+    plt.ylim(0, dim0-1)
     plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
     plt.colorbar()
