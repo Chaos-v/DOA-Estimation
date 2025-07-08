@@ -99,3 +99,4 @@
     bearingProbability, thetaDeg, fig = CNN_DOAEstimation(signal)
     ```
 
+备注：时间太长了，当时怎么写的已经忘光了，放弃维护了，训练那一块儿要是报错的话，自己想办法debug一下吧 ———— 2025.07.08
